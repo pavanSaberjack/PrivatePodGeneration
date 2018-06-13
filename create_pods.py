@@ -86,6 +86,22 @@ def generate_cocoapods():
     # Create pod repo
     create_pod_repo()
 
+def check_if_directory_exists(directory_name, path):
+    ''' (Str, Str) -> Bool
+
+    Checks if the directory exists at given path and returns True if already exists
+    '''
+    return os.path.isdir(path + '/' + directory_name)
+
+
+def add_pod_spec_repo(directory_path):
+    print("--- Creating your local pod repo \n ")
+    pod_repo_add_command = ["pod", "repo", "add", pod_spec_repo_name, pod_spec_repo_url]
+
+    if run_command(pod_repo_add_command) == True:
+        # Validate pod spec repo
+        validate_pod_spec_repo(directory_path)
+
 def create_pod_spec_repo():
     ''' () -> ()
 
@@ -93,15 +109,29 @@ def create_pod_spec_repo():
     '''
     directory_path = "~/.cocoapods/repos/" # Cocoapods directory path
     with cd(directory_path):
-        print("------ Navigating to the cocoapods directory --------\n")
-        
+        print("\n\n ------ Navigating to the cocoapods directory -------- \n\n ")
         # we are in cocoapods directory
-        print("--- Creating your local pod repo \n ")
-        pod_repo_add_command = ["pod", "repo", "add", pod_spec_repo_name, pod_spec_repo_url]
+        absolute_path = os.getcwd() # get absolute path for listing out 
+        file_exists = check_if_directory_exists(pod_spec_repo_name, absolute_path)
 
-        if run_command(pod_repo_add_command) == True:
-            # Validate pod spec repo
-            validate_pod_spec_repo(directory_path)
+        if file_exists == True:
+            print("\nPodSpec with the name " + pod_spec_repo_name + " already exists")
+            print("Do you want to skip this step ?")
+            response = get_user_input("Press (y/n): ")
+            if response == 'y':
+                print("Validating podspec repo")
+                # Validate pod spec repo
+                validate_pod_spec_repo(directory_path)
+            else:
+                print("Deleting your folder " + pod_spec_repo_name)
+                # Delete the empty folder    
+                shutil.rmtree(directory_path + '/' + pod_spec_repo_name)
+                
+                # Add pod spec repo                
+                add_pod_spec_repo(directory_path)
+        else:
+            # Add pod spec repo                
+            add_pod_spec_repo(directory_path)
         
 
 def validate_pod_spec_repo(directory_path):
@@ -316,7 +346,6 @@ def update_pod_spec_file(file_path):
     for line in updated_contents:
         f.write(line + '\n')
     f.close()
-
 
 # Fetch all the required data at one go
 pod_spec_repo_name = get_user_input("Enter your Pod Spec Repo Name: ")
