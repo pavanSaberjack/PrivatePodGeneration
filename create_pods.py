@@ -215,11 +215,6 @@ def create_pod_library(folder_path):
     print("\n\n Creating pod library \n\n")
     print("#####################################################################")
 
-
-    # folder_exists = check_if_directory_exists(custom_pod_name, folder_path)
-    # if folder_exists == True:
-    #     shutil.rmtree()
-
     cmd = ['pod', 'lib', 'create', custom_pod_name]
 
     if run_command(cmd) == True:
@@ -311,13 +306,6 @@ def push_to_spec_repo():
         
     print("#####################################################################")
     print("--- Pushing code to spec repo")
-
-    pods_repo_path = "~/.cocoapods/repos/" + pod_spec_repo_name  # Cocoapods directory path
-    with cd(pods_repo_path):
-        absolute_path = os.getcwd()
-        folder_exists = check_if_directory_exists(custom_pod_name, absolute_path)
-        if folder_exists == True:
-            shutil.rmtree(absolute_path + "/" + custom_pod_name)
 
     cmd = ["pod", "repo", "push", pod_spec_repo_name, custom_pod_name + '.podspec']
     run_command(cmd)
