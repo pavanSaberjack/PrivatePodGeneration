@@ -44,10 +44,15 @@ def run_command(command):
     '''
     retcode = subprocess.call(command)
     if retcode == 0:
-        print("--- Command success \n")
+        print("######################## Command success ################################")
         return True
     else:
-        print("Something went wrong: " + retcode)
+        print("#####################################################################")
+        print("\n\nSomething went wrong: " + str(retcode) + "\n\n")
+        print("#####################################################################")
+        response = get_user_input("\n\nDo you want to retry same step?(y/n) :")
+        if response == 'y':
+            return run_command(command)
         return False
 
 def get_directory_path():
@@ -95,6 +100,7 @@ def check_if_directory_exists(directory_name, path):
 
 
 def add_pod_spec_repo(directory_path):
+    print("#####################################################################")
     print("--- Creating your local pod repo \n ")
     pod_repo_add_command = ["pod", "repo", "add", pod_spec_repo_name, pod_spec_repo_url]
 
@@ -109,23 +115,27 @@ def create_pod_spec_repo():
     '''
     directory_path = "~/.cocoapods/repos/" # Cocoapods directory path
     with cd(directory_path):
+        print("#####################################################################")
         print("\n\n ------ Navigating to the cocoapods directory -------- \n\n ")
         # we are in cocoapods directory
         absolute_path = os.getcwd() # get absolute path for listing out 
-        file_exists = check_if_directory_exists(pod_spec_repo_name, absolute_path)
+        folder_exists = check_if_directory_exists(pod_spec_repo_name, absolute_path)
 
-        if file_exists == True:
-            print("\nPodSpec with the name " + pod_spec_repo_name + " already exists")
+        if folder_exists == True:
+            print("#####################################################################")
+            print("\n\nPodSpec with the name \"" + pod_spec_repo_name + "\" already exists\n\n")
             print("Do you want to skip this step ?")
             response = get_user_input("Press (y/n): ")
             if response == 'y':
-                print("Validating podspec repo")
+                print("#####################################################################")
+                print("\n\nValidating podspec repo\n\n")
                 # Validate pod spec repo
                 validate_pod_spec_repo(directory_path)
             else:
+                print("#####################################################################")
                 print("Deleting your folder " + pod_spec_repo_name)
                 # Delete the empty folder    
-                shutil.rmtree(directory_path + '/' + pod_spec_repo_name)
+                shutil.rmtree(absolute_path + '/' + pod_spec_repo_name)
                 
                 # Add pod spec repo                
                 add_pod_spec_repo(directory_path)
@@ -148,22 +158,68 @@ def validate_pod_spec_repo(directory_path):
         lint_cmd = ['pod', 'repo', 'lint', '.']
         run_command(lint_cmd)
 
+def clone_repo_at_path(folder_path):
+    # Clone the pod to the selected folder
+    print("#####################################################################")
+    print("\n\n Cloning your repo from \"" + custom_pod_repo_url + "\"\n\n")
+    cmd = ['git', 'clone', custom_pod_repo_url]
+    if run_command(cmd) == True:
+        folder_path = folder_path + '/' + custom_pod_name
+        with cd(folder_path):
+            create_pod_library(folder_path)
+
+def create_pod_repo_at(folder_path):
+    # Navigate to pod folder 
+    with cd(folder_path):
+
+        # Check if the folder already exists
+        folder_exists = check_if_directory_exists(custom_pod_name, folder_path)
+        if folder_exists == True:
+            print("#####################################################################")
+            print("\n\nFolder with the name \"" + custom_pod_name + "\" already exists at the current location \"" + folder_path + "\"\n\n")
+
+            response = get_user_input("Do you want to select different path? Press (y/n): ")
+            if response == 'y':
+                create_pod_repo()
+            else:
+                print("#####################################################################")
+                print("\n\n Do you want us to delete the existing folder with name \"" + custom_pod_name + "\" at \"" + folder_path + "\" and retry again?\n\n")
+                response = get_user_input("Press (y/n): ")
+                if response == 'y':
+                    print("#####################################################################")
+                    print("Deleting your folder " + custom_pod_name)
+                    # Delete the empty folder    
+                    shutil.rmtree(folder_path + '/' + custom_pod_name)
+
+                    clone_repo_at_path(folder_path)
+                else:
+                    print("#####################################################################")
+                    response = get_user_input("Retry at same location again? Press (y/n): ")
+                    if response == 'y':
+                        create_pod_repo_at(folder_path)
+        else: # Folder doesn't exist
+            clone_repo_at_path(folder_path)
+
 def create_pod_repo():
     #select the path to clone the repository
+    print("#####################################################################")
     print("-- Select a folder to clone your directory")
     folder_path = get_directory_path()
 
-    # Navigate to pod folder 
-    with cd(folder_path):
-        # Clone the pod to the selected folder
-        cmd = ['git', 'clone', custom_pod_repo_url]
-        if run_command(cmd) == True:
-            folder_path = folder_path + '/' + custom_pod_name
-            with cd(folder_path):
-                create_pod_library(folder_path)
+    create_pod_repo_at(folder_path)
+    
 
 def create_pod_library(folder_path):
     # Create pod library
+    print("#####################################################################")
+    print("\n\n Creating pod library \n\n")
+    print("#####################################################################")
+
+
+    # folder_exists = check_if_directory_exists(custom_pod_name, folder_path)
+    # if folder_exists == True:
+    #     shutil.rmtree()
+
     cmd = ['pod', 'lib', 'create', custom_pod_name]
 
     if run_command(cmd) == True:
@@ -206,15 +262,18 @@ def move_files_from_parent_directory_to_root_directory(folder_path):
     update_pod_spec_file(path + '.podspec' )
 
     # Run the command
+    print("#####################################################################")
     print("--- Linting your pod")
     lint_command = ["pod", "lib", "lint", custom_pod_name + '.podspec']
 
     if run_command(lint_command) ==  True:
         #Wait for user input to continue
+        print("#####################################################################")
         response = get_user_input('Do you want to continue the process (y/n): ')
 
         install_pods_in_example_project(folder_path)
 
+        print("#####################################################################")
         response = get_user_input('Do you want to continue the process (y/n): ')
 
         push_code_to_remote()
@@ -245,18 +304,28 @@ def push_code_to_remote():
     run_command(cmd)
 
 def push_to_spec_repo():
-
+    print("#####################################################################")
     print("--- Validating before pushing code to spec repo")
     cmd = ["pod", "spec", "lint", custom_pod_name + '.podspec']
     run_command(cmd)
         
+    print("#####################################################################")
     print("--- Pushing code to spec repo")
+
+    pods_repo_path = "~/.cocoapods/repos/" + pod_spec_repo_name  # Cocoapods directory path
+    with cd(pods_repo_path):
+        absolute_path = os.getcwd()
+        folder_exists = check_if_directory_exists(custom_pod_name, absolute_path)
+        if folder_exists == True:
+            shutil.rmtree(absolute_path + "/" + custom_pod_name)
+
     cmd = ["pod", "repo", "push", pod_spec_repo_name, custom_pod_name + '.podspec']
     run_command(cmd)
 
 def install_pods_in_example_project(folder_path):
     example_project_directory = folder_path + '/Example'
     with cd(example_project_directory):
+        print("#####################################################################")
         print("--- Installing your pods")
         cmd = ["pod", "install"]
         run_command(cmd)
@@ -302,13 +371,23 @@ def update_pod_spec_file(file_path):
 
         # Ask user for summary 
         if val == 's.summary':
+            print("#####################################################################")
             summary = get_user_input('Enter summary: ')
             line = val + '    = \'' + summary + '\''
             updated_contents.append(line)
             continue
 
+        # Version updating
+        if val == 's.version':
+            print("#####################################################################")
+            version_no = get_user_input('Enter Version: ')
+            line = val + '    = \'' + version_no + '\''
+            updated_contents.append(line)
+            continue
+
         # Ask user for description of the pod 
         if val == 's.description':
+            print("#####################################################################")
             description = get_user_input('Enter Description: ')
             updated_contents.append(line)
             updated_contents.append(description)
@@ -318,6 +397,7 @@ def update_pod_spec_file(file_path):
 
         # Home page url to be updated
         if val == 's.homepage':
+            print("#####################################################################")
             home_page_url = get_user_input('Enter bitbucket home page url: ')
             line = val + '    = \'' + home_page_url + '\''
             updated_contents.append(line)
@@ -325,6 +405,7 @@ def update_pod_spec_file(file_path):
 
         # Souce code url
         if val == 's.source':
+            print("#####################################################################")
             bitbucket_source_url = get_user_input('Enter bitbucket source url: ')
             line = val + '    = { :git => \'' + bitbucket_source_url + '\', :tag => s.version.to_s }'
             updated_contents.append(line)
