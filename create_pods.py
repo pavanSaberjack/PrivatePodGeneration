@@ -308,7 +308,20 @@ def push_to_spec_repo():
     print("--- Pushing code to spec repo")
 
     cmd = ["pod", "repo", "push", pod_spec_repo_name, custom_pod_name + '.podspec']
-    run_command(cmd)
+    if run_command(cmd) == False:
+        # Committing changes
+        directory_path = "~/.cocoapods/repos/" + pod_spec_repo_name # Cocoapods directory path
+        with cd(directory_path):
+            print("--- Adding the changes code to spec repo")
+            git_add_command = ["git", "add", "."]
+            run_command(git_add_command)
+
+            print("--- Committing changes code to spec repo")
+            git_commit_command = ["git", "commit", "-am", "\' Adding the changes \'"]
+            run_command(git_commit_command)
+
+        # Changes committed so try the same step again
+        push_to_spec_repo()     
 
 def install_pods_in_example_project(folder_path):
     example_project_directory = folder_path + '/Example'
